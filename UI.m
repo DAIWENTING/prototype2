@@ -73,16 +73,32 @@ auto_label = xlsread(fullfile(folder_name, 'auto_label.csv'),'C:C');
 ini = round(0.05 * length(train_label));
 x = ini;
 
-lab_idx = (1:ini)';
-lab_data = train_data(1:ini,:);
-lab_label = train_label(1:ini,1);
+%lab_idx = (1:ini)';
+%lab_data = train_data(1:ini,:);
+%lab_label = train_label(1:ini,1);
+%lab_label_AD = auto_label(1:ini,:);
 
-unlab_idx = (ini + 1:length(train_label))';
-unlab_data = train_data(ini + 1:length(train_label),:);
-unlab_label = train_label(ini + 1:length(train_label),1);
+%unlab_idx = (ini + 1:length(train_label))';
+%unlab_data = train_data(ini + 1:length(train_label),:);
+%unlab_label = train_label(ini + 1:length(train_label),1);
+
+lab_idx = randperm(length(train_label),ini)';
+lab_data = train_data(lab_idx,:);
+lab_label = train_label(lab_idx,1);
+lab_label_AD = auto_label(lab_idx,:);
+
+global err_label3 err_label4 err_label5
+err_label_ini = sum(lab_label ~= lab_label_AD);
+err_label3 = 0;
+err_label4 = err_label_ini;
+err_label5 = err_label_ini;
+
+unlab_idx = setdiff(1:length(train_label), lab_idx)';
+unlab_data = train_data(unlab_idx,:);
+unlab_label = train_label(unlab_idx,1);
 
 %datasets for our_humL method
-global lab_idx1 lab_data1 lab_label1 unlab_idx1 unlab_data1 unlab_label1
+global lab_idx1 lab_data1 lab_label1 unlab_idx1 unlab_data1 unlab_label1 
 lab_idx1 = lab_idx ;
 lab_data1 = lab_data;
 lab_label1 = lab_label;
@@ -103,18 +119,38 @@ unlab_label2 = unlab_label;
 global lab_label3
 lab_label3 = lab_label;
 
+%labels for our_autoL+initialization
+global lab_idx4 lab_data4 lab_label4 unlab_idx4 unlab_data4 unlab_label4
+lab_idx4 = lab_idx ;
+lab_data4 = lab_data;
+unlab_idx4 = unlab_idx ;
+unlab_data4 = unlab_data;
+unlab_label4 = unlab_label;
+lab_label4 = lab_label_AD;
+
+global lab_label5
+lab_label5 = lab_label_AD;
+
 
 model = svmtrain(lab_label, lab_data, '-t 1');
+
+global model_AD model_AD2
+model_AD = svmtrain(lab_label_AD, lab_data, '-t 1');
+model_AD2 = model_AD;
+
 global model1 model2 model3 %our_humL, random, our_autoL
 model1 = model;
 model2 = model;
 model3 = model;
 
 [~, a1,~] = svmpredict(test_label, test_data, model);
-global accuracy1 accuracy2 accuracy3 % our_humL, random, our_autoL
+[~, a2,~] = svmpredict(test_label, test_data, model_AD);
+global accuracy1 accuracy2 accuracy3 accuracy4 accuracy5% our_humL, random, our_autoL
 accuracy1 =  a1(1);
 accuracy2 =  a1(1);
 accuracy3 =  a1(1);
+accuracy4 =  a2(1);
+accuracy5 =  a2(1);
 
 global idx C D cluster_list
 % K-means clustering
@@ -170,15 +206,47 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % declare global variables
 global lab_idx1 lab_data1 lab_label1 unlab_idx1 unlab_data1 unlab_label1 
 global lab_idx2 lab_data2 lab_label2 unlab_idx2 unlab_data2 unlab_label2 
-global lab_label3
+global lab_label3 
+global lab_idx4 lab_data4 lab_label4 unlab_idx4 unlab_data4 unlab_label4 model_AD
+global lab_label5
 global train_data train_label test_data test_label
-global model1 model2 model3 t cluster_list accuracy1 accuracy2 accuracy3 D x
+global model1 model2 model3 t cluster_list accuracy1 accuracy2 accuracy3 accuracy4 accuracy5 D x
+global err_label3 err_label4 err_label5
+
+% our_humL + initialization method
+[all_predited_label4, ~, pre_dec_values4]= svmpredict(train_label, train_data, model_AD);
+[ selected_sample4, ST_samples4, ST_labels4 ] = our( lab_idx4,unlab_idx4,lab_label4,cluster_list,all_predited_label4, pre_dec_values4,D);
+
+our_label4 = train_label(selected_sample4,:); 
+%update the labeled and unlabelded datasets
+lab_idx4 = [lab_idx4;selected_sample4;ST_samples4];
+lab_data4 = [lab_data4; train_data(selected_sample4,:);train_data(ST_samples4,:)];
+lab_label4 = [lab_label4; our_label4; ST_labels4];
+  
+unlab_idx4 = setdiff(unlab_idx4, [selected_sample4;ST_samples4]);
+unlab_data4 = train_data(unlab_idx4,:);
+unlab_label4 = train_label(unlab_idx4,1);
+
+model_AD = svmtrain(lab_label4, lab_data4, '-t 1');   
+[~, a4,~] = svmpredict(test_label, test_data, model_AD);
+accuracy4 = [accuracy4,a4(1)];
+
+
+% our_autoL + initialization method
+global model_AD2 auto_label
+our_label5 = auto_label(selected_sample4,:); 
+err_label5 = err_label5 + sum(our_label5 ~= train_label(selected_sample4,:));
+
+lab_label5 = [lab_label5; our_label5; ST_labels4];
+  
+model_AD2 = svmtrain(lab_label5, lab_data4, '-t 1');   
+[~, a5,~] = svmpredict(test_label, test_data, model_AD2);
+accuracy5 = [accuracy5,a5(1)];
 
 % our_humL method
 [all_predited_label, ~, pre_dec_values]= svmpredict(train_label, train_data, model1);
 [ selected_sample, ST_samples, ST_labels ] = our( lab_idx1,unlab_idx1,lab_label1,cluster_list,all_predited_label, pre_dec_values,D);
 
-% show sample images
 global  image_path train_path
 selected_path = cell(5,1);
 for i= 1:5
@@ -209,6 +277,7 @@ set(handles.label14,'String',num2str(train_label(selected_sample(4))));
 set(handles.label15,'String',num2str(train_label(selected_sample(5))));
 
 uiwait(handles.figure1);
+
 global human_labels
 our_label = train_label(selected_sample,:);    
 our_label(1:5) = human_labels;
@@ -231,10 +300,11 @@ accuracy1 = [accuracy1,a1(1)];
 
 % our_autoL method
 % read the automatic created labels by anomaly detection for 'selected_sample'
-global auto_label
 selected_auto_label =  auto_label(selected_sample,:); % have to be replaced
 % update the labeled dataset
 lab_label3 = [lab_label3; selected_auto_label; ST_labels];
+err_label3 = err_label3 + sum(selected_auto_label ~= train_label(selected_sample,:));
+ 
 model3 = svmtrain(lab_label3, lab_data1, '-t 1');   
 [~, a3,~] = svmpredict(test_label, test_data, model3);
 accuracy3 = [accuracy3,a3(1)];
@@ -296,20 +366,38 @@ accuracy2 = [accuracy2,a2(1)];
 t = t+1;
 axes(handles.chartField);
 budget = x / length(train_label);
-plot(budget,accuracy2,budget,accuracy3,budget,accuracy1);
-legend('Random','our-autoL','our-humL','Location','northwest');
+plot(budget,accuracy2,budget,accuracy3,budget,accuracy1,budget,accuracy4,budget,accuracy5);
+legend('E1','E2','E3','E4','E5','Location','southeastoutside');
 xlabel('Percentage of manually labeled data ');
 ylabel('Accuracy (%)');
 
 
-tableData = cell(3,1); %record table data
-tableData{1,1} = a2(1);%random
-tableData{2,1} = a3(1);%our-autoL 
-tableData{3,1} = a1(1);%our-humL 
+tableData = cell(5,3); %record table data
+tableData{1,1} = [num2str(budget(end)*100),'% ','/',num2str(x(end))];
+tableData{1,2} = '0 /0';
+tableData{1,3} = a2(1);%random
+   
+tableData{2,1} = [num2str(budget(1)*100),'% ','/',num2str(x(1))];
+tableData{2,2} = [num2str(x(end)- x(1)),'/',num2str(err_label3)];
+tableData{2,3} = a3(1);%our-autoL 
+    
+tableData{3,1} = [num2str(budget(end)*100),'% ','/',num2str(x(end))];
+tableData{3,2} = '0 /0';
+tableData{3,3} = a1(1);%our-humL
+    
+tableData{4,1} = [num2str((budget(end)- budget(1))*100),'% ','/',num2str(x(end)- x(1))];
+tableData{4,2} = [num2str(x(1)),'/',num2str(err_label4)];
+tableData{4,3} = a4(1);%our-humL+ini
+    
+tableData{5,1} = '0% /0';
+tableData{5,2} = [num2str(x(end)),'/',num2str(err_label5)];
+tableData{5,3} = a5(1);%our-autoL+ini
+
+
 set(handles.tabelField,'data',tableData); %dispaly the accuracy table
 
-set(handles.labeledPerFiled,'String',num2str(budget(end))); %dispaly the percentage of labeled smaples
-set(handles.unlabeledPerFiled,'String',num2str(1-budget(end))); %dispaly the percentage of unlabeled smaples
+%set(handles.labeledPerFiled,'String',num2str(budget(end))); %dispaly the percentage of labeled smaples
+%set(handles.unlabeledPerFiled,'String',num2str(1-budget(end))); %dispaly the percentage of unlabeled smaples
 
 
 
@@ -324,11 +412,44 @@ function pushbutton2_Callback(hObject, eventdata, handles)
 global lab_idx1 lab_data1 lab_label1 unlab_idx1 unlab_data1 unlab_label1 
 global lab_idx2 lab_data2 lab_label2 unlab_idx2 unlab_data2 unlab_label2 
 global lab_label3
+global lab_idx4 lab_data4 lab_label4 unlab_idx4 unlab_data4 unlab_label4 model_AD
+global lab_label5
 global train_data train_label test_data test_label
-global model1 model2 model3 t cluster_list accuracy1 accuracy2 accuracy3 D x
+global model1 model2 model3 t cluster_list accuracy1 accuracy2 accuracy3 accuracy4 accuracy5  D x
+global model_AD2 auto_label
+global err_label3 err_label4 err_label5
 
 for i = 1:10
     
+    % our_humL + initialization method
+    [all_predited_label4, ~, pre_dec_values4]= svmpredict(train_label, train_data, model_AD);
+    [ selected_sample4, ST_samples4, ST_labels4 ] = our( lab_idx4,unlab_idx4,lab_label4,cluster_list,all_predited_label4, pre_dec_values4,D);
+
+    our_label4 = train_label(selected_sample4,:); 
+    %update the labeled and unlabelded datasets
+    lab_idx4 = [lab_idx4;selected_sample4;ST_samples4];
+    lab_data4 = [lab_data4; train_data(selected_sample4,:);train_data(ST_samples4,:)];
+    lab_label4 = [lab_label4; our_label4; ST_labels4];
+  
+    unlab_idx4 = setdiff(unlab_idx4, [selected_sample4;ST_samples4]);
+    unlab_data4 = train_data(unlab_idx4,:);
+    unlab_label4 = train_label(unlab_idx4,1);
+
+    model_AD = svmtrain(lab_label4, lab_data4, '-t 1');   
+    [~, a4,~] = svmpredict(test_label, test_data, model_AD);
+    accuracy4 = [accuracy4,a4(1)];
+    
+    % our_autoL + initialization method
+
+    our_label5 = auto_label(selected_sample4,:);
+    err_label5 = err_label5 + sum(our_label5 ~= train_label(selected_sample4,:));
+    
+    lab_label5 = [lab_label5; our_label5; ST_labels4];
+  
+    model_AD2 = svmtrain(lab_label5, lab_data4, '-t 1');   
+    [~, a5,~] = svmpredict(test_label, test_data, model_AD2);
+    accuracy5 = [accuracy5,a5(1)];
+
    % our_humL method
     [all_predited_label, ~, pre_dec_values]= svmpredict(train_label, train_data, model1);
     [ selected_sample, ST_samples, ST_labels ] = our( lab_idx1,unlab_idx1,lab_label1,cluster_list,all_predited_label, pre_dec_values,D);
@@ -411,9 +532,9 @@ for i = 1:10
 
     % our_autoL method
     % read the automatic created labels by anomaly detection for 'selected_sample'
-    global auto_label
     selected_auto_label =  auto_label(selected_sample,:); % have to be replaced
-
+    err_label3 = err_label3 + sum(selected_auto_label ~= train_label(selected_sample,:));
+    
     set(handles.label6,'String',num2str(selected_auto_label(1)));
     set(handles.label7,'String',num2str(selected_auto_label(2)));
     set(handles.label8,'String',num2str(selected_auto_label(3)));
@@ -506,23 +627,55 @@ for i = 1:10
 
 
     % show results
-    axes(handles.chartField);
     t = t+1;
+    axes(handles.chartField);
     budget = x / length(train_label);
-    plot(budget,accuracy2,budget,accuracy3,budget,accuracy1);
-    legend('Random','our-autoL','our-humL','Location','northwest');
+    plot(budget,accuracy2,budget,accuracy3,budget,accuracy1,budget,accuracy4,budget,accuracy5);
+    legend('E1','E2','E3','E4','E5','Location','southeastoutside');
     xlabel('Percentage of manually labeled data ');
     ylabel('Accuracy (%)');
-
-    tableData = get(handles.tabelField,'data');%get the recorded data
+    
+    %{
+    tableData = cell(5,2); %record table data
     tableData{1,1} = a2(1);%random
+    tableData{1,2} = budget(end);
     tableData{2,1} = a3(1);%our-autoL 
-    tableData{3,1} = a1(1);%our-humL 
+    tableData{2,2} = budget(1);
+    tableData{3,1} = a1(1);%our-humL
+    tableData{3,2} = budget(end);
+    tableData{4,1} = a4(1);%our-humL+ini
+    tableData{4,2} = budget(end)- budget(1);
+    tableData{5,1} = a5(1);%our-autoL+ini
+    tableData{5,2} = 0;
+    %}
+    
+    tableData = cell(5,3); %record table data
+    tableData{1,1} = [num2str(budget(end)*100),'% ','/',num2str(x(end))];
+    tableData{1,2} = '0 /0';
+    tableData{1,3} = a2(1);%random
+   
+    tableData{2,1} = [num2str(budget(1)*100),'% ','/',num2str(x(1))];
+    tableData{2,2} = [num2str(x(end)- x(1)),'/',num2str(err_label3)];
+    tableData{2,3} = a3(1);%our-autoL 
+    
+    tableData{3,1} = [num2str(budget(end)*100),'% ','/',num2str(x(end))];
+    tableData{3,2} = '0 /0';
+    tableData{3,3} = a1(1);%our-humL
+    
+    tableData{4,1} = [num2str((budget(end)- budget(1))*100),'% ','/',num2str(x(end)- x(1))];
+    tableData{4,2} = [num2str(x(1)),'/',num2str(err_label4),];
+    tableData{4,3} = a4(1);%our-humL+ini
+    
+    tableData{5,1} = '0% /0';
+    tableData{5,2} = [num2str(x(end)),'/',num2str(err_label5)];
+    tableData{5,3} = a5(1);%our-autoL+ini
+    
+
+    
     set(handles.tabelField,'data',tableData); %dispaly the accuracy table
 
-
-    set(handles.labeledPerFiled,'String',num2str(budget(end))); %dispaly the percentage of labeled smaples
-    set(handles.unlabeledPerFiled,'String',num2str(1-budget(end))); %dispaly the percentage of unlabeled smaples
+    %set(handles.labeledPerFiled,'String',num2str(budget(end))); %dispaly the percentage of labeled smaples
+    %set(handles.unlabeledPerFiled,'String',num2str(1-budget(end))); %dispaly the percentage of unlabeled smaples
 
 
 end
