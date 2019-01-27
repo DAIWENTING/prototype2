@@ -43,7 +43,7 @@ else
 end
 % End initialization code - DO NOT EDIT
 
-function Initialization()
+function Initialization(hObject, eventdata, handles)
 global t;
 t = 0;
 
@@ -146,11 +146,19 @@ model3 = model;
 [~, a1,~] = svmpredict(test_label, test_data, model);
 [~, a2,~] = svmpredict(test_label, test_data, model_AD);
 global accuracy1 accuracy2 accuracy3 accuracy4 accuracy5% our_humL, random, our_autoL
+
 accuracy1 =  a1(1);
 accuracy2 =  a1(1);
 accuracy3 =  a1(1);
 accuracy4 =  a2(1);
 accuracy5 =  a2(1);
+
+axes(handles.chartField);
+budget = x / length(train_label);
+plot(budget,accuracy2,budget,accuracy3,budget,accuracy1,budget,accuracy4,budget,accuracy5);
+legend('E1','E2','E3','E4','E5','Location','southeastoutside');
+xlabel('Percentage of manually labeled data ');
+ylabel('Accuracy (%)');
 
 global idx C D cluster_list
 % K-means clustering
@@ -851,7 +859,7 @@ switch dataSelected
     folder_name = './data/S4/';
 end
 uiresume(handles.figure1);
-Initialization();
+Initialization(hObject, eventdata, handles);
 
 % --- Executes during object creation, after setting all properties.
 function popupmenu1_CreateFcn(hObject, eventdata, handles)
