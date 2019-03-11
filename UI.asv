@@ -482,7 +482,7 @@ ylabel('Accuracy (%)');
 tableData = cell(5,3); %record table data
 tableData{1,1} = [num2str(budget(end)*100),'% ','/',num2str(x(end))];
 tableData{1,2} = '0 ';
-tableData{1,3} = [num2str(a2(1)),'/',num2str(acc_sensi2),'/',num2str(acc_spec2)];%random
+tableData{1,3} = [num2str(a2(1)),'/',num2str(acc_sensi1),'/',num2str(acc_spec1)];%random
 
    
 tableData{2,1} = [num2str(budget(1)*100),'% ','/',num2str(x(1))];
@@ -815,23 +815,23 @@ for i = 1:10
     tableData = cell(5,3); %record table data
     tableData{1,1} = [num2str(budget(end)*100),'% ','/',num2str(x(end))];
     tableData{1,2} = '0';
-    tableData{1,3} = [num2str(a2(1)),'/',num2str(acc_sensi2),'/',num2str(acc_spec2)];%random
+    tableData{1,3} = a2(1);%random
    
     tableData{2,1} = [num2str(budget(1)*100),'% ','/',num2str(x(1))];
     tableData{2,2} = [num2str(x(end)- x(1)),'/',num2str(sensi3),'/',num2str(spec3)];
-    tableData{2,3} = [num2str(a3(1)),'/',num2str(acc_sensi3),'/',num2str(acc_spec3)];%our-autoL 
+    tableData{2,3} = a3(1);%our-autoL 
     
     tableData{3,1} = [num2str(budget(end)*100),'% ','/',num2str(x(end))];
     tableData{3,2} = '0 ';
-    tableData{3,3} = [num2str(a1(1)),'/',num2str(acc_sensi1),'/',num2str(acc_spec1)];%our-humL
+    tableData{3,3} = a1(1);%our-humL
     
     tableData{4,1} = [num2str((budget(end)- budget(1))*100),'% ','/',num2str(x(end)- x(1))];
     tableData{4,2} = [num2str(x(1)),'/',num2str(sensi4),'/',num2str(spec4)];
-    tableData{4,3} = [num2str(a4(1)),'/',num2str(acc_sensi4),'/',num2str(acc_spec4)];%our-humL+ini
+    tableData{4,3} = a4(1);%our-humL+ini
     
     tableData{5,1} = '0% /0';
     tableData{5,2} = [num2str(x(end)),'/',num2str(sensi5),'/',num2str(spec5)];
-    tableData{5,3} = [num2str(a5(1)),'/',num2str(acc_sensi5),'/',num2str(acc_spec5)];%our-autoL+ini
+    tableData{5,3} = a5(1);%our-autoL+ini
     
 
     
