@@ -207,6 +207,51 @@ for i = 1:15
 end
 
 
+tableData = cell(5,3); %record table data
+set(handles.tabelField,'data',tableData); %dispaly the accuracy table
+
+
+axes(handles.axes1);
+hg=get(gca,'children');
+delete(hg)
+
+axes(handles.axes2);
+hg=get(gca,'children');
+delete(hg)
+
+axes(handles.axes3);
+hg=get(gca,'children');
+delete(hg)
+
+axes(handles.axes4);
+hg=get(gca,'children');
+delete(hg)
+
+axes(handles.axes5);
+hg=get(gca,'children');
+delete(hg)
+
+axes(handles.axes6);
+hg=get(gca,'children');
+delete(hg)
+
+axes(handles.axes7);
+hg=get(gca,'children');
+delete(hg)
+
+axes(handles.axes8);
+hg=get(gca,'children');
+delete(hg)
+
+axes(handles.axes9);
+hg=get(gca,'children');
+delete(hg)
+
+axes(handles.axes10);
+hg=get(gca,'children');
+delete(hg)
+
+
 % --- Executes just before UI is made visible.
 function UI_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
